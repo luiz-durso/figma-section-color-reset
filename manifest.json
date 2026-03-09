@@ -1,0 +1,13 @@
+{
+  "name": "figma-section-color-reset",
+  "id": "1611757712079542908",
+  "api": "1.0.0",
+  "main": "dist/code.js",
+  "permissions": ["teamlibrary"],
+  "enableProposedApi": true,
+  "documentAccess": "dynamic-page",
+  "editorType": ["figma"],
+  "networkAccess": {
+    "allowedDomains": ["none"]
+  }
+}
