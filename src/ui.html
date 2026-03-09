@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: "Inter", sans-serif;
+      background: #1e1e1e;
+      color: #ffffff;
+      padding: 16px;
+      width: 240px;
+    }
+
+    h2 {
+      font-size: 13px;
+      font-weight: 600;
+      color: #ffffff;
+      margin-bottom: 4px;
+    }
+
+    p.subtitle {
+      font-size: 11px;
+      color: #999;
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid #333;
+      margin: 14px 0;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px 14px;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+
+    button:hover {
+      opacity: 0.85;
+    }
+
+    button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .btn-setup {
+      background: #333;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .btn-reset {
+      background: #18a0fb;
+      color: #fff;
+    }
+
+    .status {
+      margin-top: 12px;
+      font-size: 11px;
+      color: #999;
+      min-height: 16px;
+      line-height: 1.5;
+      text-align: center;
+    }
+
+    .status.success { color: #4caf50; }
+    .status.error   { color: #f44336; }
+    .status.loading { color: #18a0fb; }
+
+    .section-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Section Color Reset</h2>
+  <p class="subtitle">Aplica automaticamente as cores corretas nas sections do seu projeto.</p>
+
+  <div class="section-label">Biblioteca</div>
+  <button class="btn-setup" id="btn-setup">⚙️ Setup da Biblioteca</button>
+
+  <hr class="divider" />
+
+  <div class="section-label">Projeto</div>
+  <button class="btn-reset" id="btn-reset">🎨 Resetar Cores</button>
+
+  <div class="status" id="status"></div>
+
+  <script>
+    const btnSetup = document.getElementById("btn-setup")
+    const btnReset = document.getElementById("btn-reset")
+    const status   = document.getElementById("status")
+
+    function setStatus(msg, type = "") {
+      status.textContent = msg
+      status.className = "status " + type
+    }
+
+    function setLoading(loading) {
+      btnSetup.disabled = loading
+      btnReset.disabled = loading
+    }
+
+    btnSetup.addEventListener("click", () => {
+      setLoading(true)
+      setStatus("Buscando styles na biblioteca...", "loading")
+      parent.postMessage({ pluginMessage: { type: "setup" } }, "*")
+    })
+
+    btnReset.addEventListener("click", () => {
+      setLoading(true)
+      setStatus("Aplicando cores nas sections...", "loading")
+      parent.postMessage({ pluginMessage: { type: "reset" } }, "*")
+    })
+
+    window.onmessage = (event) => {
+      const msg = event.data.pluginMessage
+      if (!msg) return
+
+      setLoading(false)
+
+      if (msg.type === "success") {
+        setStatus(msg.text, "success")
+      } else if (msg.type === "error") {
+        setStatus(msg.text, "error")
+      } else if (msg.type === "info") {
+        setStatus(msg.text, "")
+      }
+    }
+  </script>
+</body>
+</html>
