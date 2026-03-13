@@ -294,6 +294,63 @@
       font-size: 10px;
       color: var(--green);
     }
+
+    /* ── Progress bar ────────────────────────────── */
+    .progress-wrap {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      padding: 10px 12px;
+      background: var(--bg-hover);
+      border-radius: 8px;
+      border: 0.5px solid var(--border);
+      margin-top: 8px;
+    }
+    .progress-wrap.visible { display: flex; }
+
+    .progress-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .progress-label {
+      font-size: 11px;
+      color: var(--text-2);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 180px;
+    }
+    .progress-pct {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--purple-400);
+      flex-shrink: 0;
+    }
+    .progress-track {
+      width: 100%;
+      height: 4px;
+      background: var(--border-2);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 4px;
+      background: var(--purple-500);
+      transition: width 0.15s ease;
+    }
+    .progress-fill.loading {
+      background: linear-gradient(90deg, var(--purple-500) 0%, var(--purple-400) 50%, var(--purple-500) 100%);
+      background-size: 200% 100%;
+      animation: shimmer 1.2s infinite;
+    }
+    @keyframes shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    .progress-fill.done { background: var(--green); animation: none; }
     .footer {
       padding: 8px 14px 12px;
       display: flex;
@@ -359,6 +416,16 @@
         </button>
         <div class="status-bar" id="status-setup"></div>
         <div id="setup-done-label" style="display:none;margin-top:8px;text-align:center;font-size:11px;color:var(--green);">✓ Importação realizada</div>
+
+        <div class="progress-wrap" id="progress-setup">
+          <div class="progress-top">
+            <span class="progress-label" id="progress-setup-label">Processando...</span>
+            <span class="progress-pct" id="progress-setup-pct">0%</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" id="progress-setup-fill"></div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -384,6 +451,16 @@
           Resetar cores
         </button>
         <div class="status-bar" id="status-reset"></div>
+
+        <div class="progress-wrap" id="progress-reset">
+          <div class="progress-top">
+            <span class="progress-label" id="progress-reset-label">Processando...</span>
+            <span class="progress-pct" id="progress-reset-pct">0%</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" id="progress-reset-fill"></div>
+          </div>
+        </div>
 
         <div class="stats" id="stats-row" style="display:none">
           <div class="stat green">
@@ -462,15 +539,47 @@
       document.getElementById("stats-row").style.display = "none"
     })
 
+    document.getElementById("btn-reset").addEventListener("click", () => {
+      setLoading("btn-reset", "status-reset", true, "Aplicando cores nas sections...")
+      setProgress("reset", 0, "Iniciando...")
+      parent.postMessage({ pluginMessage: { type: "reset" } }, "*")
+    })
+
     document.getElementById("btn-setup").addEventListener("click", () => {
       setLoading("btn-setup", "status-setup", true, "Buscando estilos na biblioteca...")
+      setProgress("setup", 0, "Iniciando...")
       parent.postMessage({ pluginMessage: { type: "setup" } }, "*")
     })
 
-    document.getElementById("btn-reset").addEventListener("click", () => {
-      setLoading("btn-reset", "status-reset", true, "Aplicando cores nas sections...")
-      parent.postMessage({ pluginMessage: { type: "reset" } }, "*")
-    })
+    function setProgress(prefix, pct, label) {
+      const wrap  = document.getElementById("progress-" + prefix)
+      const fill  = document.getElementById("progress-" + prefix + "-fill")
+      const pctEl = document.getElementById("progress-" + prefix + "-pct")
+      const lblEl = document.getElementById("progress-" + prefix + "-label")
+
+      wrap.classList.add("visible")
+      fill.style.width = pct + "%"
+      pctEl.textContent = pct + "%"
+      if (label) lblEl.textContent = label
+
+      if (pct >= 100) {
+        fill.classList.remove("loading")
+        fill.classList.add("done")
+      } else {
+        fill.classList.add("loading")
+        fill.classList.remove("done")
+      }
+    }
+
+    function hideProgress(prefix) {
+      setTimeout(() => {
+        const wrap = document.getElementById("progress-" + prefix)
+        wrap.classList.remove("visible")
+        const fill = document.getElementById("progress-" + prefix + "-fill")
+        fill.style.width = "0%"
+        fill.classList.remove("done", "loading")
+      }, 800)
+    }
 
     function markSetupDone() {
       const btn = document.getElementById("btn-setup")
@@ -491,12 +600,17 @@
       const msg = event.data.pluginMessage
       if (!msg) return
 
+      if (msg.type === "progress") {
+        setProgress(msg.context, msg.pct, msg.label)
+      }
+
       if (msg.type === "setup-status") {
         if (msg.done) markSetupDone()
       }
 
       if (msg.type === "setup-done") {
         setLoading("btn-setup", "status-setup", false)
+        hideProgress("setup")
         addHistory({
           type: msg.success ? "success" : "error",
           text: msg.success ? "Setup concluído" : "Setup falhou",
@@ -507,6 +621,7 @@
 
       if (msg.type === "reset-done") {
         setLoading("btn-reset", "status-reset", false)
+        hideProgress("reset")
         if (msg.stats) {
           document.getElementById("stats-row").style.display = "grid"
           document.getElementById("stat-updated").textContent = msg.stats.updated

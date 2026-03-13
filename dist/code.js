@@ -13,6 +13,9 @@
   function sendSetupDone(success, text, detail) {
     figma.ui.postMessage({ type: "setup-done", success, text, detail });
   }
+  function sendProgress(context, pct, label) {
+    figma.ui.postMessage({ type: "progress", context, pct: Math.round(pct), label });
+  }
   function extractLayerDepth(styleName) {
     const match = styleName.match(/camada\s*(\d+)/i);
     if (!match) return null;
@@ -32,8 +35,13 @@
       return;
     }
     const keyMap = { page: "", layers: {}, states: {}, immutable: {} };
-    for (const style of styles) {
+    const total = styles.length;
+    for (let i = 0; i < total; i++) {
+      const style = styles[i];
       const { folder, styleName } = parseFolderAndName(style.name);
+      const pct = Math.round((i + 1) / total * 100);
+      sendProgress("setup", pct, `Lendo "${styleName}"...`);
+      await new Promise((resolve) => setTimeout(resolve, 0));
       if (folder === FOLDER_IMMUTABLE) {
         keyMap.immutable[styleName] = style.key;
         console.log(`\u{1F512} Imut\xE1vel: "${styleName}"`);
@@ -189,6 +197,9 @@
   function sendResetDone(success, text, stats, detail) {
     figma.ui.postMessage({ type: "reset-done", success, text, stats, detail });
   }
+  function sendProgress2(pct, label) {
+    figma.ui.postMessage({ type: "progress", context: "reset", pct: Math.round(pct), label });
+  }
   async function resetSectionColors() {
     if (figma.fileKey === LIBRARY_FILE_KEY) {
       sendResetDone(
@@ -213,9 +224,14 @@
       return;
     }
     const sections = getSections();
-    console.log(`Total de sections: ${sections.length} | Camadas dispon\xEDveis: ${totalLayers}`);
+    const total = sections.length;
+    console.log(`Total de sections: ${total} | Camadas dispon\xEDveis: ${Object.keys(styleMap.layers).length}`);
     let updated = 0, ignored = 0, skipped = 0;
-    for (const section of sections) {
+    for (let i = 0; i < total; i++) {
+      const section = sections[i];
+      const pct = Math.round((i + 1) / total * 100);
+      sendProgress2(pct, `"${section.name}"`);
+      await new Promise((resolve) => setTimeout(resolve, 0));
       if (isImmutable(section, styleMap)) {
         ignored++;
         continue;

@@ -21,6 +21,10 @@ export function sendSetupDone(success: boolean, text: string, detail?: string): 
   figma.ui.postMessage({ type: "setup-done", success, text, detail })
 }
 
+function sendProgress(context: "setup" | "reset", pct: number, label: string): void {
+  figma.ui.postMessage({ type: "progress", context, pct: Math.round(pct), label })
+}
+
 // ─── Extrai o número do nome do style de camada ───────────────────────────────
 // Aceita qualquer padrão com "camada" e um número: "Camada 1", "Camada 42" etc.
 
@@ -53,9 +57,14 @@ export async function saveStyleKeys(): Promise<void> {
   }
 
   const keyMap: StyleKeyMap = { page: "", layers: {}, states: {}, immutable: {} }
+  const total = styles.length
 
-  for (const style of styles) {
+  for (let i = 0; i < total; i++) {
+    const style = styles[i]
     const { folder, styleName } = parseFolderAndName(style.name)
+    const pct = Math.round(((i + 1) / total) * 100)
+    sendProgress("setup", pct, `Lendo "${styleName}"...`)
+    await new Promise(resolve => setTimeout(resolve, 0)) // libera a thread para UI atualizar
 
     // ── Cores de Identificação → imutáveis ───────────────────────────────────
     if (folder === FOLDER_IMMUTABLE) {
