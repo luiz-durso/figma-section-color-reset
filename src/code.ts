@@ -326,6 +326,7 @@ async function resetSectionColors(): Promise<void> {
 figma.ui.onmessage = async (msg: { type: string; height?: number }) => {
   try {
     if (msg.type === "check-setup") {
+      //await figma.clientStorage.deleteAsync(STORAGE_KEY)  //🔴 UTILIZAR PARA RESETAR O SETUP DE CORES
       const keyMap = await figma.clientStorage.getAsync(STORAGE_KEY)
       const done = keyMap && Object.keys(keyMap).length > 0
       figma.ui.postMessage({ type: "setup-status", done: !!done })
