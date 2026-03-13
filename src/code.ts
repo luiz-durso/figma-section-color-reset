@@ -17,7 +17,7 @@ figma.ui.onmessage = async (msg: { type: string; height?: number }) => {
   try {
 
     if (msg.type === "check-setup") {
-      //await figma.clientStorage.deleteAsync(STORAGE_KEY) // 🔴 REMOVER APÓS O VÍDEO
+      //await figma.clientStorage.deleteAsync(STORAGE_KEY) // 🔴 Aplicar para resetar o setup
       const keyMap = await figma.clientStorage.getAsync(STORAGE_KEY)
       const done = keyMap && Object.keys(keyMap).length > 0
       figma.ui.postMessage({ type: "setup-status", done: !!done })
