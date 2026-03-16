@@ -271,7 +271,7 @@
   figma.showUI(__html__, {
     width: 280,
     height: 620,
-    title: "Section Color Reset",
+    title: "ColorStack",
     themeColors: true
   });
   figma.ui.onmessage = async (msg) => {
