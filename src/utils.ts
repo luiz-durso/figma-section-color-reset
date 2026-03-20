@@ -75,17 +75,21 @@ export function isImmutable(
   const fillStyleId = section.fillStyleId
   if (typeof fillStyleId !== "string") return false
 
-  const immutableIds = Object.values(styleMap.immutable)
-    .map((s) => s.id)
+  // Compara apenas a parte base do ID (antes da vírgula)
+  // Ex: "S:abc123,1:24" e "S:abc123,297:18" são o mesmo style
+  const baseId = (id: string) => id.split(",")[0]
+  const sectionBaseId = baseId(fillStyleId)
+
+  const immutableBaseIds = Object.values(styleMap.immutable)
+    .map((s) => baseId(s.id))
     .filter(Boolean)
 
-  // Se já tem o style imutável aplicado → ignorar
-  if (immutableIds.includes(fillStyleId)) return true
+  if (immutableBaseIds.includes(sectionBaseId)) return true
 
   // Se é section de componentes e já tem o style Componentes → ignorar
   if (isComponentSection(section)) {
     const componentStyle = styleMap.immutable["Componentes"]
-    if (componentStyle && fillStyleId === componentStyle.id) return true
+    if (componentStyle && sectionBaseId === baseId(componentStyle.id)) return true
   }
 
   return false

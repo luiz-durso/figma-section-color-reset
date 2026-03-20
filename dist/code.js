@@ -195,11 +195,13 @@
   function isImmutable(section, styleMap) {
     const fillStyleId = section.fillStyleId;
     if (typeof fillStyleId !== "string") return false;
-    const immutableIds = Object.values(styleMap.immutable).map((s) => s.id).filter(Boolean);
-    if (immutableIds.includes(fillStyleId)) return true;
+    const baseId = (id) => id.split(",")[0];
+    const sectionBaseId = baseId(fillStyleId);
+    const immutableBaseIds = Object.values(styleMap.immutable).map((s) => baseId(s.id)).filter(Boolean);
+    if (immutableBaseIds.includes(sectionBaseId)) return true;
     if (isComponentSection(section)) {
       const componentStyle = styleMap.immutable["Componentes"];
-      if (componentStyle && fillStyleId === componentStyle.id) return true;
+      if (componentStyle && sectionBaseId === baseId(componentStyle.id)) return true;
     }
     return false;
   }
